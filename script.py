@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from pprint import pprint
 
-
+#Data una lista di codici egon identificativi per una scuola, ricerca sul db del ministero ed estrapola [Indirizzo, telefono_referente, email_referente]
 def cercaScuole(__sourceCodScuole = "/home/pi/test/lista_codici.txt", __output = "output.csv"):
 
   with open(__sourceCodScuole) as f:
