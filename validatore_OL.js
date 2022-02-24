@@ -1,18 +1,29 @@
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Crea oggetto Sheet e riferimenti per interfacce
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+const SS = {
+  ui: SpreadsheetApp.getUi(),
+  active: SpreadsheetApp.getActiveSpreadsheet(),
+  input: SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Input")
+}
+
 
 function onOpen() {
-  SpreadsheetApp.getUi() // Or DocumentApp or SlidesApp or FormApp.
-      .createMenu('Custom Menu')
+
+  // Or DocumentApp or SlidesApp or FormApp.
+  SS.ui.createMenu('Custom Menu')
       .addItem('2.VALIDA_INPUT', 'EX_VALIDATION')
       .addItem('1.CHECK_EXCEPTION', 'EX_CHECKER')
       .addItem('0.UPDATE_DATA_RANGE','updateDataRangeIndex')
       .addToUi();
 }
 
+
 function EX_VALIDATION() {
 
-  let ui = SpreadsheetApp.getUi(); // Same variations.
-  spreadS = SpreadsheetApp.getActive()
-  spreadS.toast("Inizio Validazione OL…");
+
+  SS.active.toast("Inizio Validazione OL…");
 
   insertFormula();
 
@@ -29,13 +40,9 @@ function EX_VALIDATION() {
 function VALIDA_OL(rangeName) {
 
   //Define previously Data Range in G Sheet
-  let ss = SpreadsheetApp.getActiveSpreadsheet();
-  let ui = SpreadsheetApp.getUi();
-  //let sheet = ss.getSheets()[0];
-  let sheet = ss.getSheetByName("Input");
 
-  let drng = sheet.getDataRange();
-  let rng = sheet.getRange(rangeName);
+  let drng = SS.input.getDataRange();
+  let rng = SS.input.getRange(rangeName);
   
   //Get Column index of the Range selected
   let col_index = rng.getColumn()
@@ -62,20 +69,20 @@ function VALIDA_OL(rangeName) {
     //Look for special char
     if(value.match(format) ){
 
-      sheet.getRange(i+2, col_index).setNumberFormat("@[blu]");
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[blu]");
 
       //Do not change "Note" column
       if(rangeName != "Note"){
               
               //Edit cell with special char
               let r = EDIT_FIELD(value);
-              spreadS.toast(r);
+              SS.active.toast(r);
               value = r[0];
               keepGoing = r[1];
               
 
               if (keepGoing){
-                sheet.getRange(i+2, col_index).setValue(value);
+                SS.input.getRange(i+2, col_index).setValue(value);
               } else if (!keepGoing){
                 break; //User stopped the script
               }        
@@ -84,7 +91,7 @@ function VALIDA_OL(rangeName) {
     }
     else{
       //sheet.getRange("A".concat((i+2).toString())).setNumberFormat("@[black]");
-      sheet.getRange(i+2, col_index).setNumberFormat("@[black]");
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
     }
  
     i++;
@@ -98,29 +105,29 @@ function VALIDA_OL(rangeName) {
 
 function EDIT_FIELD(field_value){
    
-  let ui = SpreadsheetApp.getUi(); // Same variations.
+
   let fixed_value = FIX_EXCEPTION(field_value);  
-  let result = ui.prompt(
+  let result = SS.ui.prompt(
           'Trovato un carattere speciale!  Yes: accetta correzione No: Inserisci nuovo valore  Cancel: Non applicare nessuna correzione   X: Interrompi Script',
           field_value + ' --> '+ fixed_value,
-          ui.ButtonSet.YES_NO_CANCEL);
+          SS.ui.ButtonSet.YES_NO_CANCEL);
     
   // Process the user's response.
   let button = result.getSelectedButton();
   let text = result.getResponseText();
         
-  if (button == ui.Button.YES) {
+  if (button == SS.ui.Button.YES) {
     // User clicked "yes".
-    spreadS.toast('Nuovo valore: ' + fixed_value);
+    SS.active.toast('Nuovo valore: ' + fixed_value);
     return [fixed_value, true];
-  } else if (button == ui.Button.NO ) {
-    spreadS.toast('Nuovo valore: ' + text);
+  } else if (button == SS.ui.Button.NO ) {
+    SS.active.toast('Nuovo valore: ' + text);
     return [text, true];
-  } else if (button == ui.Button.CANCEL){
-    spreadS.toast('Nessuna correzione.');
+  } else if (button == SS.ui.Button.CANCEL){
+    SS.active.toast('Nessuna correzione.');
     return [field_value, true];
-  }  else if (button == ui.Button.CLOSE){
-    spreadS.toast("SCRIPT INTERROTTO");
+  }  else if (button == SS.ui.Button.CLOSE){
+    SS.active.toast("SCRIPT INTERROTTO");
     return [field_value, false];
   }
 
@@ -146,29 +153,25 @@ function FIX_EXCEPTION(field_value) {
 Inserisci Formula "Descrizione Lavori"
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-function insertFormula() {
+function insertFormula(ss) {
 
-  let spreadS = SpreadsheetApp.getActive()
-  spreadS.toast("Inserimento Formula 'Descrizione Lavori'…");
+  
+  SS.active.toast("Inserimento Formula 'Descrizione Lavori'…");
 
-  let ui = SpreadsheetApp.getUi();
-  let ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  let inputSheet = ss.getSheetByName("Input");
-
-  let length = ss.getLastRow();
+  let length = SS.active.getLastRow();
 
   let i = 2;
 
-  let result = ui.alert("Lotto con backup LTE?",ui.ButtonSet.YES_NO);
+  let result = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
 
 
-  if(result == ui.Button.YES){
+  if(result == SS.ui.Button.YES){
     
     //Formula LTE
     while (i <= length ) {
       console.log("LTE: Inizio inserimento riga #"+i);
-      inputSheet.getRange(i,7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i}; " - REF PS D GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}; " - BCK LTE")`);
+      SS.input.getRange(i,7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i}; " - REF PS D GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}; " - BCK LTE")`);
 
       console.log("LTE: Inserita riga #"+i);
       i++;
@@ -180,7 +183,7 @@ function insertFormula() {
     //Formula NO LTE
     while (i <= length ) {
       console.log("NO LTE: Inizio inserimento riga #"+i);
-      inputSheet.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}2)`);
+      SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}2)`);
 
 
       console.log("NO LTE: Inserita riga #"+i);
@@ -197,9 +200,7 @@ Check Eccezioni nel file OL
 
 function EX_CHECKER() {
 
-  let ui = SpreadsheetApp.getUi(); // Same variations.
-  let spreadS = SpreadsheetApp.getActive()
-  spreadS.toast("Inizio Controllo OL …");
+  SS.active.toast("Inizio Controllo OL …");
 
   CHECK_OL("Note");
   CHECK_OL("Provincia");
@@ -213,14 +214,9 @@ function EX_CHECKER() {
 }
 
 function CHECK_OL(rangeName) {
-
-  //Definire preventivamente i Range su cui applicare la validazione
-  let ss = SpreadsheetApp.getActiveSpreadsheet();
-  let ui = SpreadsheetApp.getUi();
-  let sheet = ss.getSheetByName("Input");
-
-  let drng = sheet.getDataRange();
-  var rng = sheet.getRange(rangeName);
+  
+  let drng = SS.input.getDataRange();
+  var rng = SS.input.getRange(rangeName);
   
   //Get Column index of the Range selected
   var col_index = rng.getColumn()
@@ -243,18 +239,18 @@ function CHECK_OL(rangeName) {
 
     if(value.match(format) ){
       
-      sheet.getRange(i+2, col_index).setNumberFormat("@[red]");
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
       
       counter ++;
     }
     else{
-      sheet.getRange(i+2, col_index).setNumberFormat("@[black]");
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
     }
  
     i++;
 
   }
-  ss.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
+  SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
   //console.log("Totale eccezioni individuate: ", counter);
   
 }
@@ -263,13 +259,9 @@ function CHECK_OL(rangeName) {
 Updates dei DataRange
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 function updateDataRangeIndex() {
-  let ui = SpreadsheetApp.getUi(); // Same variations.
-  let ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  let inputSheet = ss.getSheetByName("Input");
-
-  let length = ss.getLastRow();
-  let width = ss.getLastColumn();
+  let length = SS.input.getLastRow();
+  let width = SS.input.getLastColumn();
 
   const campi = {
     "Note": "G",
@@ -280,18 +272,11 @@ function updateDataRangeIndex() {
     "cognomeDSReggente":"AN",
     "nomeDSReggente":"AO"
   }
-  
-  
-  //console.log(campi);
-  //console.log(length, width);
-  
-  //ss.setNamedRange("Pippo",ss.getRange("B2:B50"));
-  //console.log(`${campi["Note"]}2: ${campi["Note"]}${length}`);
 
   for (let x in campi) {
     //console.log(x);
     //console.log(campi[x] + "2: "+ campi[x]+length);
-    ss.setNamedRange(x, ss.getRange(campi[x] + "2:"+ campi[x]+length));
+    SS.input.setNamedRange(x, SS.input.getRange(campi[x] + "2:"+ campi[x]+length));
   }  
 
 }
