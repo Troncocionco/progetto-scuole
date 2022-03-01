@@ -116,17 +116,17 @@ function EDIT_FIELD(field_value){
   let button = result.getSelectedButton();
   let text = result.getResponseText();
         
-  if (button == SS.ui.Button.YES) {
+  if (button === SS.ui.Button.YES) {
     // User clicked "yes".
     SS.active.toast('Nuovo valore: ' + fixed_value);
     return [fixed_value, true];
-  } else if (button == SS.ui.Button.NO ) {
+  } else if (button === SS.ui.Button.NO ) {
     SS.active.toast('Nuovo valore: ' + text);
     return [text, true];
-  } else if (button == SS.ui.Button.CANCEL){
+  } else if (button === SS.ui.Button.CANCEL){
     SS.active.toast('Nessuna correzione.');
     return [field_value, true];
-  }  else if (button == SS.ui.Button.CLOSE){
+  }  else if (button === SS.ui.Button.CLOSE){
     SS.active.toast("SCRIPT INTERROTTO");
     return [field_value, false];
   }
@@ -166,7 +166,7 @@ function insertFormula(ss) {
   let result = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
 
 
-  if(result == SS.ui.Button.YES){
+  if(result === SS.ui.Button.YES){
     
     //Formula LTE
     while (i <= length ) {
@@ -181,6 +181,7 @@ function insertFormula(ss) {
   
   else {
     //Formula NO LTE
+
     while (i <= length ) {
       console.log("NO LTE: Inizio inserimento riga #"+i);
       SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}2)`);
@@ -209,32 +210,35 @@ function EX_CHECKER() {
   CHECK_OL("Indirizzo");
   CHECK_OL("nomeDSReggente");
   CHECK_OL("cognomeDSReggente");
-  
-
+  NMUCHECK("nmuSFP");
+  CONTACTCHECK("telefonoScuola");
+  CONTACTCHECK("prefisso");
+  CONTACTCHECK("tel");
+  CONTACTCHECK("mail");
 }
 
 function CHECK_OL(rangeName) {
   
-  let drng = SS.input.getDataRange();
-  var rng = SS.input.getRange(rangeName);
+  //let drng = SS.input.getDataRange();
+  let rng = SS.input.getRange(rangeName);
   
   //Get Column index of the Range selected
-  var col_index = rng.getColumn()
+  let col_index = rng.getColumn()
 
   //Get Column values from selected range
-  var rngA = rng.getValues();
+  let rngA = rng.getValues();
 
-  var notes_length = rng.getValues().length;
+  var col_length = rng.getValues().length;
 
 
   let i = 0;
   let counter = 0;
   
-  var format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
+  let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
 
-  while (i <= notes_length - 1){
+  while (i <= col_length - 1){
     
-    var value = rngA[i].toString();
+    let value = rngA[i].toString();
       
 
     if(value.match(format) ){
@@ -270,7 +274,12 @@ function updateDataRangeIndex() {
     "miurDenominazioneScuola":"Y",
     "Indirizzo":"AC",
     "cognomeDSReggente":"AN",
-    "nomeDSReggente":"AO"
+    "nomeDSReggente":"AO",
+    "nmuSFP":"BM",
+    "telefonoScuola": "AP",
+    "prefisso": "AQ",
+    "tel": "AR",
+    "mail": "AS"
   }
 
   for (let x in campi) {
@@ -278,5 +287,106 @@ function updateDataRangeIndex() {
     //console.log(campi[x] + "2: "+ campi[x]+length);
     SS.input.setNamedRange(x, SS.input.getRange(campi[x] + "2:"+ campi[x]+length));
   }  
+
+}
+
+
+
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Check NMU SFP
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+function NMUCHECK(rangeName) {
+
+  let rng = SS.input.getRange(rangeName);
+  
+  //Get Column index of the Range selected
+  let col_index = rng.getColumn()
+
+  //Get Column values from selected range
+  let rngA = rng.getValues();
+
+  var col_length = rng.getValues().length;
+
+
+  let i = 0;
+  let counter = 0;
+  
+  //let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
+
+  while (i <= col_length - 1){
+    
+    let value = rngA[i].toString();
+    console.log(value);
+    console.log(i+2);
+      
+    if(value==="780110" || value==="780111"){
+      
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
+      
+    }
+    else{
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
+      counter ++;
+    }
+ 
+    i++;
+
+  }
+  SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
+  //console.log("Totale eccezioni individuate: ", counter);
+
+}
+
+
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Check Phone Check
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+function CONTACTCHECK(rangeName) {
+
+  let rng = SS.input.getRange(rangeName);
+  
+  //Get Column index of the Range selected
+  let col_index = rng.getColumn()
+
+  //Get Column values from selected range
+  let rngA = rng.getValues();
+
+  var col_length = rng.getValues().length;
+
+
+  let i = 0;
+  let counter = 0;
+  let format
+
+  switch(rangeName) {
+    case "mail":
+      format = /([a-zA-Z0-9]*)@.*/gm;
+      break;
+    default:
+      format = /([0-9]{2,10})/gm;
+  }
+   
+
+  while (i <= col_length - 1){
+    
+    let value = rngA[i].toString();
+      
+    if(value.match(format) ){
+      
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
+      
+    }
+    else{
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
+      counter ++;
+    }
+ 
+    i++;
+
+  }
+  SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
+  //console.log("Totale eccezioni individuate: ", counter);
+  
 
 }
