@@ -285,7 +285,7 @@ function updateDataRangeIndex() {
   for (let x in campi) {
     //console.log(x);
     //console.log(campi[x] + "2: "+ campi[x]+length);
-    SS.input.setNamedRange(x, SS.input.getRange(campi[x] + "2:"+ campi[x]+length));
+    SS.active.setNamedRange(x, SS.input.getRange(campi[x] + "2:"+ campi[x]+length));
   }  
 
 }
