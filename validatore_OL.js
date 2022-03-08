@@ -55,13 +55,11 @@ function VALIDA_OL(rangeName) {
   console.log(notes_length);
   console.log(rngA[0]);
 
-  let i = 0;
   let counter = 0;
   
   let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
 
-
-  while (i <= notes_length - 1){
+  for (let i = 0; i <= notes_length - 1; i++) { 
     
     let value = rngA[i].toString(); //cell's value
     let keepGoing = true; //controller interrupt script
@@ -93,8 +91,6 @@ function VALIDA_OL(rangeName) {
       //sheet.getRange("A".concat((i+2).toString())).setNumberFormat("@[black]");
       SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
     }
- 
-    i++;
 
   }
 
@@ -161,7 +157,7 @@ function insertFormula(ss) {
 
   let length = SS.active.getLastRow();
 
-  let i = 2;
+  
 
   let result = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
 
@@ -169,30 +165,25 @@ function insertFormula(ss) {
   if(result === SS.ui.Button.YES){
     
     //Formula LTE
-    while (i <= length ) {
+    for(let i = 2; i <= length; i++) {
       console.log("LTE: Inizio inserimento riga #"+i);
       SS.input.getRange(i,7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i}; " - REF PS D GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}; " - BCK LTE")`);
 
       console.log("LTE: Inserita riga #"+i);
-      i++;
     }
 
   }
-  
   else {
     //Formula NO LTE
 
-    while (i <= length ) {
+    for(let i = 2; i <= length; i++) {
       console.log("NO LTE: Inizio inserimento riga #"+i);
       SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}2)`);
 
 
       console.log("NO LTE: Inserita riga #"+i);
-      i++;
     }
-
   }
-  
 }
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -231,12 +222,12 @@ function CHECK_OL(rangeName) {
   var col_length = rng.getValues().length;
 
 
-  let i = 0;
+  
   let counter = 0;
   
   let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
 
-  while (i <= col_length - 1){
+  for (let i = 0; i <= col_length - 1; i++){
     
     let value = rngA[i].toString();
       
@@ -250,8 +241,6 @@ function CHECK_OL(rangeName) {
     else{
       SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
     }
- 
-    i++;
 
   }
   SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
@@ -308,12 +297,12 @@ function NMUCHECK(rangeName) {
   var col_length = rng.getValues().length;
 
 
-  let i = 0;
+  
   let counter = 0;
   
   //let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
 
-  while (i <= col_length - 1){
+  for (let i = 0; i <= col_length - 1; i++){
     
     let value = rngA[i].toString();
     console.log(value);
@@ -328,8 +317,6 @@ function NMUCHECK(rangeName) {
       SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
       counter ++;
     }
- 
-    i++;
 
   }
   SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
@@ -355,7 +342,7 @@ function CONTACTCHECK(rangeName) {
   var col_length = rng.getValues().length;
 
 
-  let i = 0;
+  
   let counter = 0;
   let format
 
@@ -368,7 +355,7 @@ function CONTACTCHECK(rangeName) {
   }
    
 
-  while (i <= col_length - 1){
+  for (let i = 0; i <= col_length - 1; i++){
     
     let value = rngA[i].toString();
       
@@ -381,8 +368,6 @@ function CONTACTCHECK(rangeName) {
       SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
       counter ++;
     }
- 
-    i++;
 
   }
   SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
