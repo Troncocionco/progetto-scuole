@@ -22,7 +22,6 @@ function onOpen() {
 
 function EX_VALIDATION() {
 
-
   SS.active.toast("Inizio Validazione OL…");
 
   insertFormula();
@@ -34,7 +33,23 @@ function EX_VALIDATION() {
   VALIDA_OL("Indirizzo");
   VALIDA_OL("nomeDSReggente");
   VALIDA_OL("cognomeDSReggente");
+
+  let PARAMETRI = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Parametri");
+
+  updataDataConcordata();
   
+}
+
+function updataDataConcordata() {
+    let today = new Date()
+    console.log(today.getDate())
+    let dd = String(today.getDate()).padStart(2, '0');
+    let mm = String(today.getMonth() + 3).padStart(2, '0'); //January is 0!
+    let yyyy = today.getFullYear();
+
+    today = dd + '/' + mm + '/' + yyyy;
+    
+    PARAMETRI.getRange(2,1).setValue(today);
 }
 
 function VALIDA_OL(rangeName) {
@@ -151,16 +166,11 @@ Inserisci Formula "Descrizione Lavori"
 
 function insertFormula(ss) {
 
-  
   SS.active.toast("Inserimento Formula 'Descrizione Lavori'…");
-
 
   let length = SS.active.getLastRow();
 
-  
-
   let result = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
-
 
   if(result === SS.ui.Button.YES){
     
@@ -178,7 +188,7 @@ function insertFormula(ss) {
 
     for(let i = 2; i <= length; i++) {
       console.log("NO LTE: Inizio inserimento riga #"+i);
-      SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}2)`);
+      SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i})`);
 
 
       console.log("NO LTE: Inserita riga #"+i);
@@ -279,7 +289,10 @@ function updateDataRangeIndex() {
 
 }
 
+function updateDataConcordata() {
+  ss
 
+}
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Check NMU SFP
