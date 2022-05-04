@@ -13,6 +13,7 @@ function onOpen() {
 
   // Or DocumentApp or SlidesApp or FormApp.
   SS.ui.createMenu('Custom Menu')
+      .addItem('3.TEST','test')
       .addItem('2.VALIDA_INPUT', 'EX_VALIDATION')
       .addItem('1.CHECK_EXCEPTION', 'EX_CHECKER')
       .addItem('0.UPDATE_DATA_RANGE','updateDataRangeIndex')
@@ -24,6 +25,7 @@ function EX_VALIDATION() {
 
   SS.active.toast("Inizio Validazione OL…");
 
+  //Aggiorna campo "Note" (Descrizione Lavori) con formule per OL LTE o OL NON LTE
   insertFormula();
 
   VALIDA_OL("Note");
@@ -36,8 +38,10 @@ function EX_VALIDATION() {
 
   let PARAMETRI = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Parametri");
 
+  //Aggiorna campo "DataConcordata" per emissione OL: 2 mesi dopo emissione
   updataDataConcordata();
-  
+
+//*END FUNCTION EX_VALIDATION*//  
 }
 
 function updataDataConcordata() {
@@ -50,6 +54,8 @@ function updataDataConcordata() {
     today = dd + '/' + mm + '/' + yyyy;
     
     PARAMETRI.getRange(2,1).setValue(today);
+
+//*END FUNCTION updateDataConcordata*//  
 }
 
 function VALIDA_OL(rangeName) {
@@ -110,7 +116,8 @@ function VALIDA_OL(rangeName) {
   }
 
   //console.log("Totale eccezioni individuate: ", counter);
-  
+
+//*END FUNCTION  VALIDA_OL*//    
 }
 
 
@@ -142,6 +149,7 @@ function EDIT_FIELD(field_value){
     return [field_value, false];
   }
 
+//*END FUNCTION EDIT_FIELD*//  
 }
 
 function FIX_EXCEPTION(field_value) {
@@ -159,7 +167,9 @@ function FIX_EXCEPTION(field_value) {
   .replaceAll("?"," ");
 
   return output;
+  //*END FUNCTION FIX_EXCEPTION*//
 }
+
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Inserisci Formula "Descrizione Lavori"
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
@@ -170,18 +180,17 @@ function insertFormula(ss) {
 
   let length = SS.active.getLastRow();
 
-  let result = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
+  let result_LTE = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
 
-  if(result === SS.ui.Button.YES){
+  if(result_LTE === SS.ui.Button.YES){
     
     //Formula LTE
     for(let i = 2; i <= length; i++) {
       console.log("LTE: Inizio inserimento riga #"+i);
       SS.input.getRange(i,7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i}; " - REF PS D GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}; " - BCK LTE")`);
 
-      console.log("LTE: Inserita riga #"+i);
+      //console.log("LTE: Inserita riga #"+i);
     }
-
   }
   else {
     //Formula NO LTE
@@ -191,9 +200,14 @@ function insertFormula(ss) {
       SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i})`);
 
 
-      console.log("NO LTE: Inserita riga #"+i);
+      //console.log("NO LTE: Inserita riga #"+i);
     }
   }
+
+
+
+
+//*END FUNCTION insertFormula*//
 }
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -387,4 +401,18 @@ function CONTACTCHECK(rangeName) {
   //console.log("Totale eccezioni individuate: ", counter);
   
 
+}
+
+
+function test() {
+
+  let result_BANDA = SS.ui.alert("Lotto con upgrade di banda?",SS.ui.ButtonSet.YES_NO);
+
+  if(result_BANDA === SS.ui.Button.YES){
+    let new_banda = SS.ui.prompt("Inserisci Valore di banda");
+    SS.ui.alert("Nuova banda inserita: " + new_banda.getResponseText());
+
+    PARAMETRI.getRange(2,2).setValue(new_banda.getResponseText());
+
+  }
 }
