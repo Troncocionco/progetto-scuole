@@ -271,6 +271,7 @@ function CHECK_OL(rangeName) {
     }
     else{
       SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
+      SS.input.getRange(i+2, col_index).setBackground("white");
     }
 
   }
