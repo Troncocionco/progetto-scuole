@@ -1,11 +1,14 @@
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Crea oggetto Sheet e riferimenti per interfacce
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+let PARAMETRI = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Parametri");
 
 const SS = {
   ui: SpreadsheetApp.getUi(),
   active: SpreadsheetApp.getActiveSpreadsheet(),
-  input: SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Input")
+  input: SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Input"),
+  skynetMode: PARAMETRI.getRange(2,2).getValue(),
+  format: /[\*'\.,\\\/\(\)"°:;^\?\!%&]/gm
 }
 
 
@@ -17,7 +20,7 @@ function onOpen() {
       .addItem('2.VALIDA_INPUT', 'EX_VALIDATION')
       .addItem('1.CHECK_EXCEPTION', 'EX_CHECKER')
       .addItem('0.UPDATE_DATA_RANGE','updateDataRangeIndex')
-      .addToUi();
+      .addToUi();  
 }
 
 
@@ -36,10 +39,11 @@ function EX_VALIDATION() {
   VALIDA_OL("nomeDSReggente");
   VALIDA_OL("cognomeDSReggente");
 
-  let PARAMETRI = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Parametri");
+  
 
   //Aggiorna campo "DataConcordata" per emissione OL: 2 mesi dopo emissione
   updataDataConcordata();
+  
 
 //*END FUNCTION EX_VALIDATION*//  
 }
@@ -53,7 +57,7 @@ function updataDataConcordata() {
 
     today = dd + '/' + mm + '/' + yyyy;
     
-    PARAMETRI.getRange(2,1).setValue(today);
+    PARAMETRI.getRange(1,2).setValue(today);
 
 //*END FUNCTION updateDataConcordata*//  
 }
@@ -78,17 +82,15 @@ function VALIDA_OL(rangeName) {
 
   let counter = 0;
   
-  let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
-
   for (let i = 0; i <= notes_length - 1; i++) { 
     
     let value = rngA[i].toString(); //cell's value
     let keepGoing = true; //controller interrupt script
 
     //Look for special char
-    if(value.match(format) ){
+    if(value.match(SS.format) ){
 
-      SS.input.getRange(i+2, col_index).setNumberFormat("@[blu]");
+      SS.input.getRange(i+2, col_index).setNumberFormat("@[blue]");
 
       //Do not change "Note" column
       if(rangeName != "Note"){
@@ -96,20 +98,19 @@ function VALIDA_OL(rangeName) {
               //Edit cell with special char
               let r = EDIT_FIELD(value);
               SS.active.toast(r);
-              value = r[0];
-              keepGoing = r[1];
+              value = r[0];       //Fixed text
+              keepGoing = r[1];   //User wants to implement correction?
               
-
               if (keepGoing){
-                SS.input.getRange(i+2, col_index).setValue(value);
+                SS.input.getRange(i+2, col_index).setValue(value); //Write fixed value
               } else if (!keepGoing){
-                break; //User stopped the script
+                break; //Don't edit this field
               }        
       }
       counter ++;
     }
     else{
-      //sheet.getRange("A".concat((i+2).toString())).setNumberFormat("@[black]");
+      
       SS.input.getRange(i+2, col_index).setNumberFormat("@[black]");
     }
 
@@ -123,31 +124,36 @@ function VALIDA_OL(rangeName) {
 
 function EDIT_FIELD(field_value){
    
-
-  let fixed_value = FIX_EXCEPTION(field_value);  
-  let result = SS.ui.prompt(
-          'Trovato un carattere speciale!  Yes: accetta correzione No: Inserisci nuovo valore  Cancel: Non applicare nessuna correzione   X: Interrompi Script',
-          field_value + ' --> '+ fixed_value,
-          SS.ui.ButtonSet.YES_NO_CANCEL);
-    
-  // Process the user's response.
-  let button = result.getSelectedButton();
-  let text = result.getResponseText();
-        
-  if (button === SS.ui.Button.YES) {
-    // User clicked "yes".
-    SS.active.toast('Nuovo valore: ' + fixed_value);
+  let fixed_value = FIX_EXCEPTION(field_value);
+  
+  if ( SS.skynetMode ) {
     return [fixed_value, true];
-  } else if (button === SS.ui.Button.NO ) {
-    SS.active.toast('Nuovo valore: ' + text);
-    return [text, true];
-  } else if (button === SS.ui.Button.CANCEL){
-    SS.active.toast('Nessuna correzione.');
-    return [field_value, true];
-  }  else if (button === SS.ui.Button.CLOSE){
-    SS.active.toast("SCRIPT INTERROTTO");
-    return [field_value, false];
   }
+  else {
+    let result = SS.ui.prompt(
+            'Trovato un carattere speciale!  Yes: accetta correzione No: Inserisci nuovo valore  Cancel: Non applicare nessuna correzione   X: Interrompi Script',
+            field_value + ' --> '+ fixed_value,
+            SS.ui.ButtonSet.YES_NO_CANCEL);
+      
+    // Process the user's response.
+    let button = result.getSelectedButton();
+    let text = result.getResponseText();
+          
+    if (button === SS.ui.Button.YES) {
+      // User clicked "yes".
+      SS.active.toast('Nuovo valore: ' + fixed_value);
+      return [fixed_value, true];
+    } else if (button === SS.ui.Button.NO ) {
+      SS.active.toast('Nuovo valore: ' + text);
+      return [text, true];
+    } else if (button === SS.ui.Button.CANCEL){
+      SS.active.toast('Nessuna correzione.');
+      return [field_value, true];
+    }  else if (button === SS.ui.Button.CLOSE){
+      SS.active.toast("SCRIPT INTERROTTO");
+      return [field_value, false];
+    }
+  }  
 
 //*END FUNCTION EDIT_FIELD*//  
 }
@@ -164,6 +170,9 @@ function FIX_EXCEPTION(field_value) {
   .replaceAll("/"," ")
   .replaceAll(". "," ")
   .replaceAll("."," ")
+  .replaceAll(","," ")
+  .replaceAll("&"," ")
+  .replaceAll("%"," ")
   .replaceAll("?"," ");
 
   return output;
@@ -180,9 +189,10 @@ function insertFormula(ss) {
 
   let length = SS.active.getLastRow();
 
-  let result_LTE = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
+  //let result_LTE = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
 
-  if(result_LTE === SS.ui.Button.YES){
+  //if(result_LTE === SS.ui.Button.YES){
+  if (PARAMETRI.getRange(6,2).getValue()) {  
     
     //Formula LTE
     for(let i = 2; i <= length; i++) {
@@ -245,20 +255,17 @@ function CHECK_OL(rangeName) {
 
   var col_length = rng.getValues().length;
 
-
-  
   let counter = 0;
   
-  let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
-
   for (let i = 0; i <= col_length - 1; i++){
     
     let value = rngA[i].toString();
       
 
-    if(value.match(format) ){
+    if(value.match(SS.format) ){
       
       SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
+      SS.input.getRange(i+2, col_index).setBackground("yellow");
       
       counter ++;
     }
@@ -323,11 +330,8 @@ function NMUCHECK(rangeName) {
 
   var col_length = rng.getValues().length;
 
-
   
   let counter = 0;
-  
-  //let format = /[\*'\.,\\\/\(\)"°:;^\?\!]/gm;
 
   for (let i = 0; i <= col_length - 1; i++){
     
@@ -342,6 +346,7 @@ function NMUCHECK(rangeName) {
     }
     else{
       SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
+      SS.input.getRange(i+2, col_index).setBackground("yellow");
       counter ++;
     }
 
@@ -393,6 +398,7 @@ function CONTACTCHECK(rangeName) {
     }
     else{
       SS.input.getRange(i+2, col_index).setNumberFormat("@[red]");
+      SS.input.getRange(i+2, col_index).setBackground("yellow");
       counter ++;
     }
 
@@ -401,18 +407,4 @@ function CONTACTCHECK(rangeName) {
   //console.log("Totale eccezioni individuate: ", counter);
   
 
-}
-
-
-function test() {
-
-  let result_BANDA = SS.ui.alert("Lotto con upgrade di banda?",SS.ui.ButtonSet.YES_NO);
-
-  if(result_BANDA === SS.ui.Button.YES){
-    let new_banda = SS.ui.prompt("Inserisci Valore di banda");
-    SS.ui.alert("Nuova banda inserita: " + new_banda.getResponseText());
-
-    PARAMETRI.getRange(2,2).setValue(new_banda.getResponseText());
-
-  }
 }
