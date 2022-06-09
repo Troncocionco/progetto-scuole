@@ -7,10 +7,10 @@ const SS = {
   ui: SpreadsheetApp.getUi(),
   active: SpreadsheetApp.getActiveSpreadsheet(),
   input: SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Input"),
+  summary: SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Summary"),
   skynetMode: PARAMETRI.getRange(2,2).getValue(),
   format: /[\*'\.,\\\/\(\)"°:;^\?\!%&]/gm
 }
-
 
 function onOpen() {
 
@@ -31,41 +31,21 @@ function EX_VALIDATION() {
   //Aggiorna campo "Note" (Descrizione Lavori) con formule per OL LTE o OL NON LTE
   insertFormula();
 
-  VALIDA_OL("Note");
-  VALIDA_OL("Provincia");
-  VALIDA_OL("Comune");
-  VALIDA_OL("miurDenominazioneScuola");
-  VALIDA_OL("Indirizzo");
-  VALIDA_OL("nomeDSReggente");
-  VALIDA_OL("cognomeDSReggente");
+  let campi = ["Note","Provincia", "Comune", "miurDenominazioneScuola", "Indirizzo", "nomeDSReggente", "cognomeDSReggente"];
 
-  
+  campi.forEach(campo => VALIDA_OL(campo));
 
   //Aggiorna campo "DataConcordata" per emissione OL: 2 mesi dopo emissione
   updataDataConcordata();
   
 
-//*END FUNCTION EX_VALIDATION*//  
+//*END FUNCTION EX_VALIDATION*//
 }
 
-function updataDataConcordata() {
-    let today = new Date()
-    console.log(today.getDate())
-    let dd = String(today.getDate()).padStart(2, '0');
-    let mm = String(today.getMonth() + 3).padStart(2, '0'); //January is 0!
-    let yyyy = today.getFullYear();
-
-    today = dd + '/' + mm + '/' + yyyy;
-    
-    PARAMETRI.getRange(1,2).setValue(today);
-
-//*END FUNCTION updateDataConcordata*//  
-}
 
 function VALIDA_OL(rangeName) {
 
   //Define previously Data Range in G Sheet
-
   let drng = SS.input.getDataRange();
   let rng = SS.input.getRange(rangeName);
   
@@ -80,7 +60,7 @@ function VALIDA_OL(rangeName) {
   console.log(notes_length);
   console.log(rngA[0]);
 
-  let counter = 0;
+  let countCorrection = 0;
   
   for (let i = 0; i <= notes_length - 1; i++) { 
     
@@ -107,7 +87,7 @@ function VALIDA_OL(rangeName) {
                 break; //Don't edit this field
               }        
       }
-      counter ++;
+      countCorrection ++;
     }
     else{
       
@@ -115,8 +95,8 @@ function VALIDA_OL(rangeName) {
     }
 
   }
-
-  //console.log("Totale eccezioni individuate: ", counter);
+  SS.summary.getRange("sum_" + rangeName).setValue(countCorrection);
+  //console.log("Totale eccezioni individuate: ", countCorrection);
 
 //*END FUNCTION  VALIDA_OL*//    
 }
@@ -228,18 +208,16 @@ function EX_CHECKER() {
 
   SS.active.toast("Inizio Controllo OL …");
 
-  CHECK_OL("Note");
-  CHECK_OL("Provincia");
-  CHECK_OL("Comune");
-  CHECK_OL("miurDenominazioneScuola");
-  CHECK_OL("Indirizzo");
-  CHECK_OL("nomeDSReggente");
-  CHECK_OL("cognomeDSReggente");
+  let campi = ["Note","Provincia", "Comune", "miurDenominazioneScuola", "Indirizzo", "nomeDSReggente", "cognomeDSReggente"];
+
+  campi.forEach(campo => CHECK_OL(campo));
+  
+  let campiContatto = ["telefonoScuola", "prefisso", "tel", "mail"];
+
+  campiContatto.forEach(campo => CONTACTCHECK(campo));
+
   NMUCHECK("nmuSFP");
-  CONTACTCHECK("telefonoScuola");
-  CONTACTCHECK("prefisso");
-  CONTACTCHECK("tel");
-  CONTACTCHECK("mail");
+
 }
 
 function CHECK_OL(rangeName) {
@@ -276,6 +254,7 @@ function CHECK_OL(rangeName) {
 
   }
   SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
+  SS.summary.getRange("sum_" + rangeName).setValue(counter);
   //console.log("Totale eccezioni individuate: ", counter);
   
 }
@@ -307,13 +286,22 @@ function updateDataRangeIndex() {
     //console.log(x);
     //console.log(campi[x] + "2: "+ campi[x]+length);
     SS.active.setNamedRange(x, SS.input.getRange(campi[x] + "2:"+ campi[x]+length));
-  }  
+  }
 
 }
 
-function updateDataConcordata() {
-  ss
+function updataDataConcordata() {
+    let today = new Date()
+    console.log(today.getDate())
+    let dd = String(today.getDate()).padStart(2, '0');
+    let mm = String(today.getMonth() + 3).padStart(2, '0'); //January is 0!
+    let yyyy = today.getFullYear();
 
+    today = dd + '/' + mm + '/' + yyyy;
+    
+    PARAMETRI.getRange(1,2).setValue(today);
+
+//*END FUNCTION updateDataConcordata*//  
 }
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -353,10 +341,10 @@ function NMUCHECK(rangeName) {
 
   }
   SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
+  SS.summary.getRange("sum_" + rangeName).setValue(counter);
   //console.log("Totale eccezioni individuate: ", counter);
 
 }
-
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Check Phone Check
@@ -405,6 +393,7 @@ function CONTACTCHECK(rangeName) {
 
   }
   SS.active.toast(`Trovati ${counter} campi con caratteri speciali in: ${rangeName}`);
+  SS.summary.getRange("sum_" + rangeName).setValue(counter);
   //console.log("Totale eccezioni individuate: ", counter);
   
 
