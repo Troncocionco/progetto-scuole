@@ -19,10 +19,46 @@ function onOpen() {
       .addItem('3.TEST','test')
       .addItem('2.VALIDA_INPUT', 'EX_VALIDATION')
       .addItem('1.CHECK_EXCEPTION', 'EX_CHECKER')
-      .addItem('0.UPDATE_DATA_RANGE','updateDataRangeIndex')
+      .addItem('0.INIT','init')
       .addToUi();  
 }
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Setup (Update data range, wipe text-sheet)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+function init() {
 
+  let textSheets = ["FTTO_Text","Giga_Text"];
+
+  updateDataRangeIndex();
+
+  textSheets.forEach(x => sheetWiper(x));
+
+  let skynetMode = SS.ui.alert("Vuoi usare la SkynetMode?", SS.ui.ButtonSet.YES_NO);
+
+  let lteMode = SS.ui.alert("Validazione di un Lotto con Backup LTE?", SS.ui.ButtonSet.YES_NO);
+
+  if (skynetMode === SS.ui.Button.YES) {
+    //Modifica valore
+    PARAMETRI.getRange(2,2).setValue("TRUE")
+  }
+  else if (skynetMode === SS.ui.Button.NO) {
+    //Modifica valore
+    PARAMETRI.getRange(2,2).setValue("FALSE")
+  }
+
+  if (lteMode === SS.ui.Button.YES) {
+    //Modifica valore
+    PARAMETRI.getRange(6,2).setValue("TRUE")
+  }
+  else if (lteMode === SS.ui.Button.NO) {
+    PARAMETRI.getRange(6,2).setValue("FALSE")
+  }
+
+}
+
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  ESECUTORI
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 function EX_VALIDATION() {
 
@@ -42,7 +78,24 @@ function EX_VALIDATION() {
 //*END FUNCTION EX_VALIDATION*//
 }
 
+function EX_CHECKER() {
 
+  SS.active.toast("Inizio Controllo OL …");
+
+  let campi = ["Note","Provincia", "Comune", "miurDenominazioneScuola", "Indirizzo", "nomeDSReggente", "cognomeDSReggente"];
+
+  campi.forEach(campo => CHECK_OL(campo));
+  
+  let campiContatto = ["telefonoScuola", "prefisso", "tel", "mail"];
+
+  campiContatto.forEach(campo => CONTACTCHECK(campo));
+
+  NMUCHECK("nmuSFP");
+
+}
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Valida OL
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 function VALIDA_OL(rangeName) {
 
   //Define previously Data Range in G Sheet
@@ -100,125 +153,9 @@ function VALIDA_OL(rangeName) {
 
 //*END FUNCTION  VALIDA_OL*//    
 }
-
-
-function EDIT_FIELD(field_value){
-   
-  let fixed_value = FIX_EXCEPTION(field_value);
-  
-  if ( SS.skynetMode ) {
-    return [fixed_value, true];
-  }
-  else {
-    let result = SS.ui.prompt(
-            'Trovato un carattere speciale!  Yes: accetta correzione No: Inserisci nuovo valore  Cancel: Non applicare nessuna correzione   X: Interrompi Script',
-            field_value + ' --> '+ fixed_value,
-            SS.ui.ButtonSet.YES_NO_CANCEL);
-      
-    // Process the user's response.
-    let button = result.getSelectedButton();
-    let text = result.getResponseText();
-          
-    if (button === SS.ui.Button.YES) {
-      // User clicked "yes".
-      SS.active.toast('Nuovo valore: ' + fixed_value);
-      return [fixed_value, true];
-    } else if (button === SS.ui.Button.NO ) {
-      SS.active.toast('Nuovo valore: ' + text);
-      return [text, true];
-    } else if (button === SS.ui.Button.CANCEL){
-      SS.active.toast('Nessuna correzione.');
-      return [field_value, true];
-    }  else if (button === SS.ui.Button.CLOSE){
-      SS.active.toast("SCRIPT INTERROTTO");
-      return [field_value, false];
-    }
-  }  
-
-//*END FUNCTION EDIT_FIELD*//  
-}
-
-function FIX_EXCEPTION(field_value) {
-  let output = field_value.replaceAll("\" "," ")
-  .replaceAll(" \""," ")
-  .replaceAll('"',"")
-  .replaceAll('('," ")
-  .replaceAll(":"," ")
-  .replaceAll(')'," ")
-  .replaceAll("\*", "")
-  .replaceAll("'"," ")
-  .replaceAll("/"," ")
-  .replaceAll(". "," ")
-  .replaceAll("."," ")
-  .replaceAll(","," ")
-  .replaceAll("&"," ")
-  .replaceAll("%"," ")
-  .replaceAll("?"," ");
-
-  return output;
-  //*END FUNCTION FIX_EXCEPTION*//
-}
-
-/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Inserisci Formula "Descrizione Lavori"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-function insertFormula(ss) {
-
-  SS.active.toast("Inserimento Formula 'Descrizione Lavori'…");
-
-  let length = SS.active.getLastRow();
-
-  //let result_LTE = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
-
-  //if(result_LTE === SS.ui.Button.YES){
-  if (PARAMETRI.getRange(6,2).getValue()) {  
-    
-    //Formula LTE
-    for(let i = 2; i <= length; i++) {
-      console.log("LTE: Inizio inserimento riga #"+i);
-      SS.input.getRange(i,7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i}; " - REF PS D GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}; " - BCK LTE")`);
-
-      //console.log("LTE: Inserita riga #"+i);
-    }
-  }
-  else {
-    //Formula NO LTE
-
-    for(let i = 2; i <= length; i++) {
-      console.log("NO LTE: Inizio inserimento riga #"+i);
-      SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i})`);
-
-
-      //console.log("NO LTE: Inserita riga #"+i);
-    }
-  }
-
-
-
-
-//*END FUNCTION insertFormula*//
-}
-
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Check Eccezioni nel file OL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
-function EX_CHECKER() {
-
-  SS.active.toast("Inizio Controllo OL …");
-
-  let campi = ["Note","Provincia", "Comune", "miurDenominazioneScuola", "Indirizzo", "nomeDSReggente", "cognomeDSReggente"];
-
-  campi.forEach(campo => CHECK_OL(campo));
-  
-  let campiContatto = ["telefonoScuola", "prefisso", "tel", "mail"];
-
-  campiContatto.forEach(campo => CONTACTCHECK(campo));
-
-  NMUCHECK("nmuSFP");
-
-}
 
 function CHECK_OL(rangeName) {
   
@@ -258,6 +195,116 @@ function CHECK_OL(rangeName) {
   //console.log("Totale eccezioni individuate: ", counter);
   
 }
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Editor field
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+function EDIT_FIELD(field_value){
+   
+  //let fixed_value = FIX_EXCEPTION(field_value);
+
+  let fixed_value = field_value.replaceAll("\" "," ")
+  .replaceAll(" \""," ")
+  .replaceAll('"',"")
+  .replaceAll('('," ")
+  .replaceAll(":"," ")
+  .replaceAll(')'," ")
+  .replaceAll("\*", "")
+  .replaceAll("'"," ")
+  .replaceAll("/"," ")
+  .replaceAll(". "," ")
+  .replaceAll("."," ")
+  .replaceAll(","," ")
+  .replaceAll("&"," ")
+  .replaceAll("%"," ")
+  .replaceAll("?"," ");
+  
+  if ( SS.skynetMode ) {
+    return [fixed_value, true];
+  }
+  else {
+    let result = SS.ui.prompt(
+            'Trovato un carattere speciale!  Yes: accetta correzione No: Inserisci nuovo valore  Cancel: Non applicare nessuna correzione   X: Interrompi Script',
+            field_value + ' --> '+ fixed_value,
+            SS.ui.ButtonSet.YES_NO_CANCEL);
+      
+    // Process the user's response.
+    let button = result.getSelectedButton();
+    let text = result.getResponseText();
+          
+    if (button === SS.ui.Button.YES) {
+      // User clicked "yes".
+      SS.active.toast('Nuovo valore: ' + fixed_value);
+      return [fixed_value, true];
+    } else if (button === SS.ui.Button.NO ) {
+      SS.active.toast('Nuovo valore: ' + text);
+      return [text, true];
+    } else if (button === SS.ui.Button.CANCEL){
+      SS.active.toast('Nessuna correzione.');
+      return [field_value, true];
+    }  else if (button === SS.ui.Button.CLOSE){
+      SS.active.toast("SCRIPT INTERROTTO");
+      return [field_value, false];
+    }
+  }  
+
+//*END FUNCTION EDIT_FIELD*//  
+}
+
+
+
+//**------------------------------------------------------------------------------------------ */
+
+
+
+
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Inserisci Formula "Descrizione Lavori"
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+function insertFormula(ss) {
+
+  SS.active.toast("Inserimento Formula 'Descrizione Lavori'…");
+
+  let length = SS.active.getLastRow();
+
+  //let result_LTE = SS.ui.alert("Lotto con backup LTE?",SS.ui.ButtonSet.YES_NO);
+
+  //if(result_LTE === SS.ui.Button.YES){
+  if (PARAMETRI.getRange(6,2).getValue()) {  
+    
+    //Formula LTE
+    for(let i = 2; i <= length; i++) {
+      console.log("LTE: Inizio inserimento riga #"+i);
+      SS.input.getRange(i,7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i}; " - REF PS D GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i}; " - BCK LTE")`);
+
+      //console.log("LTE: Inserita riga #"+i);
+    }
+  }
+  else {
+    //Formula NO LTE
+
+    for(let i = 2; i <= length; i++) {
+      console.log("NO LTE: Inizio inserimento riga #"+i);
+      SS.input.getRange(i, 7).setValue(`=CONCATENATE(D${i};" - ";MID(BJ${i};1;1); MID(BJ${i};7;7);" - VECCHIO COD ";K${i};" - NUOVO COD ";J${i}; " - TIPO ";R${i};" ";S${i};" - PIAN ";AW${i};" - REF PS DANIELE GENTILE 3357825750 - SCUOLA ";Y${i};" - ";V${i};" REF ";AN${i};" ";AO${i};" - T ";AP${i})`);
+
+
+      //console.log("NO LTE: Inserita riga #"+i);
+    }
+  }
+//*END FUNCTION insertFormula*//
+}
+
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Sheet Wiper
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+function sheetWiper(sheetName, dataRange = sheetName) {
+
+  let TT = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  
+  let rng = TT.getRange(dataRange);
+  
+  rng.setValue("");
+
+}
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Updates dei DataRange
@@ -289,7 +336,9 @@ function updateDataRangeIndex() {
   }
 
 }
-
+/*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Updates dei DataConcordata
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 function updataDataConcordata() {
     let today = new Date()
     console.log(today.getDate())
@@ -349,7 +398,6 @@ function NMUCHECK(rangeName) {
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Check Phone Check
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
-
 function CONTACTCHECK(rangeName) {
 
   let rng = SS.input.getRange(rangeName);
@@ -396,5 +444,4 @@ function CONTACTCHECK(rangeName) {
   SS.summary.getRange("sum_" + rangeName).setValue(counter);
   //console.log("Totale eccezioni individuate: ", counter);
   
-
 }
