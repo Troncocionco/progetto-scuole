@@ -2,7 +2,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from pprint import pprint
-pprint("prima di eseguire il metodo")
+
 #Data una lista di codici egon identificativi per una scuola, ricerca sul db del ministero ed estrapola [Indirizzo, telefono_referente, email_referente]
 def cercaScuole(__sourceCodScuole, __output = "output.csv"):
     pprint(__sourceCodScuole)
@@ -39,5 +39,7 @@ def cercaScuole(__sourceCodScuole, __output = "output.csv"):
 
     file_object.close()
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+    
 x = os.getcwd() + "/listaCodici.txt"
 cercaScuole(x)
